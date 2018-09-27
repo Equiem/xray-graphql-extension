@@ -2,7 +2,7 @@
   "name": "xray-graphql-extension",
   "version": "0.1.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "clean": "rm -rf dist",
     "compile": "tsc",
@@ -26,6 +26,7 @@
     "aws-xray-sdk-core": "^2.0.0",
     "aws-xray-sdk-express": "^2.0.0",
     "graphql": "^14.0.2",
-    "graphql-extensions": "^0.2.1"
+    "graphql-extensions": "^0.2.1",
+    "runtypes": "^2.1.6"
   }
 }

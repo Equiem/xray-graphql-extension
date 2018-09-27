@@ -1,5 +1,7 @@
+import * as core from "aws-xray-sdk-core";
+import * as express from "aws-xray-sdk-express";
+
 export { SegmentRepository } from "./SegmentRepository";
-export { XRayExtension } from "./XRayExtension";
+export { XRayGraphQLExtension } from "./XRayGraphQLExtension";
 export { XRayKey } from "./XRayKey";
-export * from "aws-xray-sdk-core";
-export * from "aws-xray-sdk-express";
+export { core, express };

@@ -4,7 +4,7 @@ import { EndHandler, GraphQLExtension, Request } from "graphql-extensions";
 import { SegmentRepository } from "./SegmentRepository";
 import { XRayKey } from "./XRayKey";
 
-export class XRayExtension<TContext = any> implements GraphQLExtension<TContext> {
+export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TContext> {
   private segments = new SegmentRepository();
 
   public constructor(private rootName: string) { }
