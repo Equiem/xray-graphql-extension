@@ -21,7 +21,6 @@ class XRayGraphQLExtension {
             ? new aws_xray_sdk_core_1.Segment(root, trace.Root, trace.Parent)
             : root;
         segment.addMetadata("query", o.queryString);
-        segment.addAnnotation("url", o.request.url);
         this.segments.add({ key: "", prev: null }, segment);
         return (...errors) => {
             if (errors.length > 0) {

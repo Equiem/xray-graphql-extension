@@ -27,7 +27,6 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
       : root;
 
     segment.addMetadata("query", o.queryString);
-    segment.addAnnotation("url", o.request.url);
 
     this.segments.add({ key: "", prev: null }, segment);
 
