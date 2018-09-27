@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "clean": "rm -rf dist",
-    "compile": "tsc",
+    "compile": "npm run clean && tsc",
     "lint": "tslint -p .",
     "test": "npm run lint && npm run compile",
     "watch": "npm run clean && tsc-watch --onSuccess 'echo Compiled successfully!' --onFailure 'echo Compilation failed!'"
@@ -21,6 +21,9 @@
     "tslint": "^5.11.0",
     "tslint-eslint-rules": "^5.4.0",
     "typescript": "^3.0.3"
+  },
+  "peerDependencies": {
+    "apollo-server-core": "~2.1.0"
   },
   "dependencies": {
     "aws-xray-sdk-core": "^2.0.0",
