@@ -1,6 +1,7 @@
 import { middleware, Segment, SegmentInterface } from "aws-xray-sdk-core";
-import { DocumentNode, GraphQLResolveInfo } from "graphql";
-import { EndHandler, GraphQLExtension, Request } from "graphql-extensions";
+import { GraphQLResolveInfo } from "graphql";
+import { EndHandler, GraphQLExtension } from "graphql-extensions";
+import { GraphQLExtensionRequestStartArgs } from "./GraphQLRequestStartArgs";
 import { SegmentRepository } from "./SegmentRepository";
 import { XRayKey } from "./XRayKey";
 
@@ -11,31 +12,19 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
   private segments = new SegmentRepository();
 
   public constructor(
-    private root: string | SegmentInterface,
+    private root: (args: GraphQLExtensionRequestStartArgs<TContext>) => string | SegmentInterface,
     private annotations: Array<{ key: string; value: string }> = [],
   ) { }
 
-  public requestDidStart(o: {
-    request: Request;
-    queryString?: string;
-    parsedQuery?: DocumentNode;
-    operationName?: string;
-    variables?: { [key: string]: any };
-    persistedQueryHit?: boolean;
-    persistedQueryRegister?: boolean;
-    context: TContext;
-  }): EndHandler | void {
+  public requestDidStart(o: GraphQLExtensionRequestStartArgs<TContext>): EndHandler | void {
     const trace = middleware.processHeaders({
       headers: { "X-Amzn-Trace-Id": o.request.headers.get("X-Amzn-Trace-Id") },
     });
 
-    const segment = typeof this.root === "string"
-      ? new Segment(
-        this.root,
-        trace.Root,
-        trace.Parent,
-      )
-      : this.root;
+    const root = this.root(o);
+    const segment = typeof root === "string"
+      ? new Segment(root, trace.Root, trace.Parent)
+      : root;
 
     segment.addMetadata("query", o.queryString);
     segment.addAnnotation("url", o.request.url);
