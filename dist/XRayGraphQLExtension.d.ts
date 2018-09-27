@@ -1,12 +1,17 @@
+import { SegmentInterface } from "aws-xray-sdk-core";
 import { DocumentNode, GraphQLResolveInfo } from "graphql";
 import { EndHandler, GraphQLExtension, Request } from "graphql-extensions";
 /**
  * An Apollo Server GraphQL Extension which reports trace data to AWS XRay.
  */
 export declare class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TContext> {
-    private rootName;
+    private root;
+    private annotations;
     private segments;
-    constructor(rootName: string);
+    constructor(root: string | SegmentInterface, annotations?: Array<{
+        key: string;
+        value: string;
+    }>);
     requestDidStart(o: {
         request: Request;
         queryString?: string;

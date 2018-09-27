@@ -10,6 +10,14 @@ declare module "aws-xray-sdk-core" {
     export class IncomingRequestData {
       constructor(req: http.IncomingMessage);
     }
+
+    export interface TraceData {
+      Root?: string;
+      Parent?: string;
+      Sampled?: string;
+    }
+
+    export function processHeaders(req: { headers: { [header: string]: string } }): TraceData;
   }
 
   export interface SegmentInterface {

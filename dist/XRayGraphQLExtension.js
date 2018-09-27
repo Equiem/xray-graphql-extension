@@ -7,18 +7,29 @@ const XRayKey_1 = require("./XRayKey");
  * An Apollo Server GraphQL Extension which reports trace data to AWS XRay.
  */
 class XRayGraphQLExtension {
-    constructor(rootName) {
-        this.rootName = rootName;
+    constructor(root, annotations = []) {
+        this.root = root;
+        this.annotations = annotations;
         this.segments = new SegmentRepository_1.SegmentRepository();
     }
     requestDidStart(o) {
-        const segment = new aws_xray_sdk_core_1.Segment(this.rootName, o.request.headers.get("X-Amzn-Trace-Id"), o.request.headers.get("X-Amzn-Trace-Id"));
+        const trace = aws_xray_sdk_core_1.middleware.processHeaders({
+            headers: { "X-Amzn-Trace-Id": o.request.headers.get("X-Amzn-Trace-Id") },
+        });
+        const segment = typeof this.root === "string"
+            ? new aws_xray_sdk_core_1.Segment(trace.Root, trace.Parent)
+            : this.root;
         segment.addMetadata("query", o.queryString);
         segment.addAnnotation("url", o.request.url);
         this.segments.add({ key: "", prev: null }, segment);
-        return () => {
+        return (...errors) => {
+            if (errors.length > 0) {
+                errors.forEach((error, i) => {
+                    segment.addAnnotation(`Error${i}`, `${error}`);
+                });
+            }
             this.segments.forEach((s) => {
-                s.close();
+                s.close(errors.length > 0 ? errors[0] : undefined);
             });
         };
     }
@@ -26,8 +37,10 @@ class XRayGraphQLExtension {
         const segment = this.segments
             .findParent(info.path)
             .addNewSubsegment(this.segments.pathToString(info.path));
-        segment.addAnnotation("parentType", info.parentType.name);
-        segment.addAnnotation("fieldName", info.fieldName);
+        segment.addAnnotation("GraphQLField", `${info.parentType.name}.${info.fieldName}`);
+        for (const annotation of this.annotations) {
+            segment.addAnnotation(annotation.key, annotation.value);
+        }
         this.segments.add(info.path, segment);
         info[XRayKey_1.XRayKey] = segment;
         return () => {
