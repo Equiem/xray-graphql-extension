@@ -4,6 +4,9 @@ import { EndHandler, GraphQLExtension, Request } from "graphql-extensions";
 import { SegmentRepository } from "./SegmentRepository";
 import { XRayKey } from "./XRayKey";
 
+/**
+ * An Apollo Server GraphQL Extension which reports trace data to AWS XRay.
+ */
 export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TContext> {
   private segments = new SegmentRepository();
 
@@ -21,8 +24,8 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
   }): EndHandler | void {
     const segment = new Segment(
       this.rootName,
-      o.request.headers["X-Amzn-Trace-Id"],
-      o.request.headers["X-Amzn-Trace-Id"],
+      o.request.headers.get("X-Amzn-Trace-Id"),
+      o.request.headers.get("X-Amzn-Trace-Id"),
     );
 
     segment.addMetadata("query", o.queryString);
@@ -31,7 +34,9 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
     this.segments.add({ key: "", prev: null }, segment);
 
     return (): void => {
-      this.segments.forEach((s: Segment): void => s.close());
+      this.segments.forEach((s: Segment): void => {
+        s.close();
+      });
     };
   }
 

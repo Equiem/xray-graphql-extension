@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const aws_xray_sdk_core_1 = require("aws-xray-sdk-core");
+/**
+ * A repository of Segments.
+ */
 class SegmentRepository {
     constructor() {
         this.segments = {};

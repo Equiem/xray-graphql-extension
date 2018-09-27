@@ -1,1 +1,1 @@
-{"version":3,"file":"XRaySegmentSource.js","sourceRoot":"","sources":["../src/XRaySegmentSource.ts"],"names":[],"mappings":";;AAAA,yDAA4C;AAC5C,uCAAsD;AACtD,uCAAoC;AAEvB,QAAA,iBAAiB,GAAG,iBAAM,CAAC;IACtC,CAAC,iBAAO,CAAC,EAAE,qBAAU,CAAC,2BAAO,CAAC;CAC/B,CAAC,CAAC"}
+{"version":3,"file":"XRaySegmentSource.js","sourceRoot":"","sources":["../src/XRaySegmentSource.ts"],"names":[],"mappings":";;AAAA,yDAA4C;AAC5C,uCAAsD;AACtD,uCAAoC;AAEpC;;GAEG;AACU,QAAA,iBAAiB,GAAG,iBAAM,CAAC;IACtC,CAAC,iBAAO,CAAC,EAAE,qBAAU,CAAC,2BAAO,CAAC;CAC/B,CAAC,CAAC"}

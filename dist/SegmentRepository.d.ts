@@ -1,5 +1,8 @@
 import { Segment } from "aws-xray-sdk-core";
 import { ResponsePath } from "graphql";
+/**
+ * A repository of Segments.
+ */
 export declare class SegmentRepository {
     segments: {
         [path: string]: Segment | undefined;
