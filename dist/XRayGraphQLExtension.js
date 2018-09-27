@@ -17,7 +17,7 @@ class XRayGraphQLExtension {
             headers: { "X-Amzn-Trace-Id": o.request.headers.get("X-Amzn-Trace-Id") },
         });
         const segment = typeof this.root === "string"
-            ? new aws_xray_sdk_core_1.Segment(trace.Root, trace.Parent)
+            ? new aws_xray_sdk_core_1.Segment(this.root, trace.Root, trace.Parent)
             : this.root;
         segment.addMetadata("query", o.queryString);
         segment.addAnnotation("url", o.request.url);

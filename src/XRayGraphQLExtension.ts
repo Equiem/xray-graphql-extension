@@ -31,6 +31,7 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
 
     const segment = typeof this.root === "string"
       ? new Segment(
+        this.root,
         trace.Root,
         trace.Parent,
       )
