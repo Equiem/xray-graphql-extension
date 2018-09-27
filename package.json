@@ -1,0 +1,31 @@
+{
+  "name": "xray-graphql-extension",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "compile": "tsc",
+    "lint": "tslint -p .",
+    "test": "npm run lint && npm run compile",
+    "watch": "npm run clean && tsc-watch --onSuccess 'echo Compiled successfully!' --onFailure 'echo Compilation failed!'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tsc-watch": "^1.0.29",
+    "tslint": "^5.11.0",
+    "tslint-eslint-rules": "^5.4.0",
+    "typescript": "^3.0.3"
+  },
+  "dependencies": {
+    "@types/express": "^4.16.0",
+    "@types/graphql": "^14.0.1",
+    "@types/node": "^10.11.0",
+    "aws-xray-sdk-core": "^2.0.0",
+    "aws-xray-sdk-express": "^2.0.0",
+    "graphql": "^14.0.2",
+    "graphql-extensions": "^0.2.1"
+  }
+}
