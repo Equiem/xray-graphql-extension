@@ -6,17 +6,17 @@ const aws_xray_sdk_core_1 = require("aws-xray-sdk-core");
  */
 class SegmentRepository {
     constructor() {
-        this.segments = {};
-        this.rootSegments = [];
+        this._rootSegments = [];
+        this._segments = {};
     }
     add(path, segment) {
-        this.segments[this.pathToString(path)] = segment;
+        this._segments[this.pathToString(path)] = segment;
         if (path == null) {
-            this.rootSegments.push(segment);
+            this._rootSegments.push(segment);
         }
     }
     find(path) {
-        return this.segments[this.pathToString(path)];
+        return this._segments[this.pathToString(path)];
     }
     findParent(path) {
         if (path == null) {
@@ -25,7 +25,7 @@ class SegmentRepository {
         let parent = this.find(path.prev);
         if (parent == null) {
             const grandparent = this.findParent(path.prev);
-            parent = grandparent
+            parent = grandparent != null
                 ? grandparent.addNewSubsegment(this.pathToString(path.prev))
                 : new aws_xray_sdk_core_1.Segment(this.pathToString(path.prev));
             this.add(path.prev, parent);
@@ -42,7 +42,13 @@ class SegmentRepository {
         return parts.reverse().join("/");
     }
     forEach(callback) {
-        Object.keys(this.segments).map((key) => this.segments[key]).forEach(callback);
+        Object.keys(this._segments).map((key) => this._segments[key]).forEach(callback);
+    }
+    get segments() {
+        return Object.keys(this._segments).map((key) => this._segments[key]);
+    }
+    get rootSegments() {
+        return this._rootSegments;
     }
 }
 exports.SegmentRepository = SegmentRepository;

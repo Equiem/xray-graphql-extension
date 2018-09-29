@@ -10,7 +10,7 @@ class XRayGraphQLExtension {
     constructor(root, annotations = []) {
         this.root = root;
         this.annotations = annotations;
-        this.segments = new SegmentRepository_1.SegmentRepository();
+        this._segments = new SegmentRepository_1.SegmentRepository();
     }
     requestDidStart(o) {
         const trace = aws_xray_sdk_core_1.middleware.processHeaders({
@@ -21,31 +21,50 @@ class XRayGraphQLExtension {
             ? new aws_xray_sdk_core_1.Segment(root, trace.Root, trace.Parent)
             : root;
         segment.addMetadata("query", o.queryString);
-        this.segments.add({ key: "", prev: null }, segment);
+        this._segments.add(null, segment);
         return (...errors) => {
             if (errors.length > 0) {
                 errors.forEach((error, i) => {
                     segment.addAnnotation(`Error${i}`, `${error}`);
                 });
             }
-            this.segments.forEach((s) => {
+            this._segments.forEach((s) => {
                 s.close(errors.length > 0 ? errors[0] : undefined);
             });
         };
     }
     willResolveField(_source, _args, _context, info) {
-        const segment = this.segments
-            .findParent(info.path)
-            .addNewSubsegment(this.segments.pathToString(info.path));
+        const parent = this._segments.findParent(info.path);
+        const segment = parent.addNewSubsegment(this._segments.pathToString(info.path));
         segment.addAnnotation("GraphQLField", `${info.parentType.name}.${info.fieldName}`);
         for (const annotation of this.annotations) {
             segment.addAnnotation(annotation.key, annotation.value);
         }
-        this.segments.add(info.path, segment);
+        this._segments.add(info.path, segment);
         info[XRayKey_1.XRayKey] = segment;
-        return () => {
-            segment.close();
+        return (...errors) => {
+            if (errors.length > 0) {
+                errors.forEach((error, i) => {
+                    segment.addAnnotation(`Error${i}`, `${error}`);
+                });
+            }
+            segment.close(errors.length > 0 ? errors[0] : undefined);
+            this.closeParentsWithNoOpenSubsegments(segment);
         };
+    }
+    closeParentsWithNoOpenSubsegments(segment) {
+        if (segment.parent != null && segment.parent.subsegments.find((s) => !s.isClosed()) == null) {
+            // No remaining subsegments of parent are open, so close it too.
+            segment.parent.close();
+            // Continue recursively.
+            this.closeParentsWithNoOpenSubsegments(segment.parent);
+        }
+    }
+    get segments() {
+        return this._segments.segments;
+    }
+    get rootSegments() {
+        return this._segments.rootSegments;
     }
 }
 exports.XRayGraphQLExtension = XRayGraphQLExtension;

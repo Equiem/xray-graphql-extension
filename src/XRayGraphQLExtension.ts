@@ -9,14 +9,14 @@ import { XRayKey } from "./XRayKey";
  * An Apollo Server GraphQL Extension which reports trace data to AWS XRay.
  */
 export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TContext> {
-  private segments = new SegmentRepository();
+  private _segments = new SegmentRepository();
 
   public constructor(
     private root: (args: GraphQLExtensionRequestStartArgs<TContext>) => string | SegmentInterface,
     private annotations: Array<{ key: string; value: string }> = [],
   ) { }
 
-  public requestDidStart(o: GraphQLExtensionRequestStartArgs<TContext>): EndHandler | void {
+  public requestDidStart(o: GraphQLExtensionRequestStartArgs<TContext>): EndHandler {
     const trace = middleware.processHeaders({
       headers: { "X-Amzn-Trace-Id": o.request.headers.get("X-Amzn-Trace-Id") },
     });
@@ -28,7 +28,7 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
 
     segment.addMetadata("query", o.queryString);
 
-    this.segments.add({ key: "", prev: null }, segment);
+    this._segments.add(null, segment);
 
     return (...errors: Error[]): void => {
       if (errors.length > 0) {
@@ -36,7 +36,7 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
           segment.addAnnotation(`Error${i}`, `${error}`);
         });
       }
-      this.segments.forEach((s: Segment): void => {
+      this._segments.forEach((s: Segment): void => {
         s.close(errors.length > 0 ? errors[0] : undefined);
       });
     };
@@ -48,9 +48,8 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
     _context: TContext,
     info: GraphQLResolveInfo,
   ): EndHandler {
-    const segment = this.segments
-      .findParent(info.path)
-      .addNewSubsegment(this.segments.pathToString(info.path));
+    const parent = this._segments.findParent(info.path);
+    const segment = parent.addNewSubsegment(this._segments.pathToString(info.path));
 
     segment.addAnnotation("GraphQLField", `${info.parentType.name}.${info.fieldName}`);
 
@@ -58,12 +57,36 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
       segment.addAnnotation(annotation.key, annotation.value);
     }
 
-    this.segments.add(info.path, segment);
+    this._segments.add(info.path, segment);
 
     info[XRayKey] = segment;
 
-    return (): void => {
-      segment.close();
+    return (...errors: Error[]): void => {
+      if (errors.length > 0) {
+        errors.forEach((error, i) => {
+          segment.addAnnotation(`Error${i}`, `${error}`);
+        });
+      }
+
+      segment.close(errors.length > 0 ? errors[0] : undefined);
+      this.closeParentsWithNoOpenSubsegments(segment);
     };
+  }
+
+  public closeParentsWithNoOpenSubsegments(segment: SegmentInterface): void {
+    if (segment.parent != null && segment.parent.subsegments.find((s) => !s.isClosed()) == null) {
+      // No remaining subsegments of parent are open, so close it too.
+      segment.parent.close();
+      // Continue recursively.
+      this.closeParentsWithNoOpenSubsegments(segment.parent);
+    }
+  }
+
+  public get segments(): Segment[] {
+    return this._segments.segments;
+  }
+
+  public get rootSegments(): Segment[] {
+    return this._segments.rootSegments;
   }
 }
