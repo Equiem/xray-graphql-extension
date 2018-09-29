@@ -1,6 +1,6 @@
 {
   "name": "xray-graphql-extension",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -21,6 +21,7 @@
     "@types/graphql": "^14.0.1",
     "@types/mocha": "~2.2.48",
     "@types/node": "^10.11.0",
+    "@types/sinon": "^5.0.2",
     "chai": "~4.1.2",
     "chai-as-promised": "~7.1.1",
     "madge": "~3.2.0",
@@ -29,6 +30,7 @@
     "mocha-typescript": "~1.1.12",
     "nyc": "~13.0.1",
     "reflect-metadata": "^0.1.12",
+    "sinon": "^6.3.4",
     "source-map-support": "^0.4.18",
     "testdouble": "^3.8.1",
     "tsc-watch": "^1.0.29",

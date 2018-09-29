@@ -25,18 +25,13 @@ export class SegmentRepository {
       return;
     }
 
-    let parent = this.find(path.prev);
+    const parent = this.find(path.prev);
 
-    if (parent == null) {
-      const grandparent = this.findParent(path.prev);
-      parent = grandparent != null
-        ? grandparent.addNewSubsegment(this.pathToString(path.prev))
-        : new Segment(this.pathToString(path.prev));
-
-      this.add(path.prev, parent);
+    if (parent != null) {
+      return parent;
     }
 
-    return parent;
+    return this.findParent(path.prev);
   }
 
   public pathToString(path: ResponsePath): string {

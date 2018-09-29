@@ -42,23 +42,9 @@ class XRayGraphQLExtension {
         }
         this._segments.add(info.path, segment);
         info[XRayKey_1.XRayKey] = segment;
-        return (...errors) => {
-            if (errors.length > 0) {
-                errors.forEach((error, i) => {
-                    segment.addAnnotation(`Error${i}`, `${error}`);
-                });
-            }
-            segment.close(errors.length > 0 ? errors[0] : undefined);
-            this.closeParentsWithNoOpenSubsegments(segment);
+        return (error, _result) => {
+            segment.close(error != null ? error : undefined);
         };
-    }
-    closeParentsWithNoOpenSubsegments(segment) {
-        if (segment.parent != null && segment.parent.subsegments.find((s) => !s.isClosed()) == null) {
-            // No remaining subsegments of parent are open, so close it too.
-            segment.parent.close();
-            // Continue recursively.
-            this.closeParentsWithNoOpenSubsegments(segment.parent);
-        }
     }
     get segments() {
         return this._segments.segments;

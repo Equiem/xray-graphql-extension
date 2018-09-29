@@ -61,25 +61,9 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
 
     info[XRayKey] = segment;
 
-    return (...errors: Error[]): void => {
-      if (errors.length > 0) {
-        errors.forEach((error, i) => {
-          segment.addAnnotation(`Error${i}`, `${error}`);
-        });
-      }
-
-      segment.close(errors.length > 0 ? errors[0] : undefined);
-      this.closeParentsWithNoOpenSubsegments(segment);
+    return (error: Error | null, _result?: any): void => {
+      segment.close(error != null ? error : undefined);
     };
-  }
-
-  public closeParentsWithNoOpenSubsegments(segment: SegmentInterface): void {
-    if (segment.parent != null && segment.parent.subsegments.find((s) => !s.isClosed()) == null) {
-      // No remaining subsegments of parent are open, so close it too.
-      segment.parent.close();
-      // Continue recursively.
-      this.closeParentsWithNoOpenSubsegments(segment.parent);
-    }
   }
 
   public get segments(): Segment[] {

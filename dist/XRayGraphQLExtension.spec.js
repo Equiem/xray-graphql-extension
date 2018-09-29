@@ -13,6 +13,7 @@ const aws_xray_sdk_core_1 = require("aws-xray-sdk-core");
 const chai_1 = require("chai");
 const chaiAsPromised = require("chai-as-promised");
 const mocha_typescript_1 = require("mocha-typescript");
+const sinon = require("sinon");
 const td = require("testdouble");
 const XRayGraphQLExtension_1 = require("./XRayGraphQLExtension");
 // tslint:disable:no-unsafe-any
@@ -22,6 +23,12 @@ chai_1.use(chaiAsPromised);
  * Tests for the getConnectionSource function.
  */
 let XRayGraphQLExtensionSpec = class XRayGraphQLExtensionSpec {
+    beforeEach() {
+        this.clock = sinon.useFakeTimers();
+    }
+    afterEach() {
+        this.clock.uninstall();
+    }
     testUseProvidedRootSegmentName() {
         this.startRequest(new XRayGraphQLExtension_1.XRayGraphQLExtension((_) => "SegmentNameAsString"));
         chai_1.expect(this.extension.rootSegments[0]).not.to.eq(undefined);
@@ -84,9 +91,6 @@ let XRayGraphQLExtensionSpec = class XRayGraphQLExtensionSpec {
         chai_1.expect(this.rootSegment.subsegments[1].isClosed()).to.eq(true);
         chai_1.expect(this.rootSegment.subsegments[0].fault).to.eq(undefined);
         chai_1.expect(this.rootSegment.subsegments[1].fault).to.eq(true);
-        chai_1.expect(this.rootSegment.subsegments[1].annotations).to.deep.include({
-            Error0: "Error: Something went wrong",
-        });
     }
     testOpenNestedSegmentForEachField() {
         this.startRequest();
@@ -99,16 +103,10 @@ let XRayGraphQLExtensionSpec = class XRayGraphQLExtensionSpec {
             name: "products",
         });
         chai_1.expect(this.rootSegment.subsegments[0].subsegments[0]).to.deep.include({
-            name: "products/0",
-        });
-        chai_1.expect(this.rootSegment.subsegments[0].subsegments[0].subsegments[0]).to.deep.include({
             annotations: { GraphQLField: "Product.uuid" },
             name: "products/0/uuid",
         });
         chai_1.expect(this.rootSegment.subsegments[0].subsegments[1]).to.deep.include({
-            name: "products/1",
-        });
-        chai_1.expect(this.rootSegment.subsegments[0].subsegments[1].subsegments[0]).to.deep.include({
             annotations: { GraphQLField: "Product.uuid" },
             name: "products/1/uuid",
         });
@@ -118,56 +116,14 @@ let XRayGraphQLExtensionSpec = class XRayGraphQLExtensionSpec {
         this.requestField("Query.products");
         const endNestedSubsegment0 = this.requestField("Product.products/0/uuid");
         const endNestedSubsegment1 = this.requestField("Product.products/1/uuid");
-        const subSegment0 = this.rootSegment.subsegments[0].subsegments[0];
-        const nestedSubSegment0 = subSegment0.subsegments[0];
+        const nestedSubSegment0 = this.rootSegment.subsegments[0].subsegments[0];
         chai_1.expect(nestedSubSegment0.isClosed()).to.eq(false);
         endNestedSubsegment0();
         chai_1.expect(nestedSubSegment0.isClosed()).to.eq(true);
-        const subSegment1 = this.rootSegment.subsegments[0].subsegments[1];
-        const nestedSubSegment1 = subSegment1.subsegments[0];
+        const nestedSubSegment1 = this.rootSegment.subsegments[0].subsegments[1];
         chai_1.expect(nestedSubSegment1.isClosed()).to.eq(false);
         endNestedSubsegment1();
         chai_1.expect(nestedSubSegment1.isClosed()).to.eq(true);
-    }
-    testClosesNestedListSegmentParent() {
-        this.startRequest();
-        this.requestField("Query.products");
-        const endUuidFieldSubsegment = this.requestField("Product.products/0/uuid");
-        const endNameFieldSubsegment = this.requestField("Product.products/0/name");
-        const productSubsegment = this.rootSegment.subsegments[0].subsegments[0];
-        const uuidFieldSubsegment = productSubsegment.subsegments[0];
-        const nameFieldSubsegment = productSubsegment.subsegments[1];
-        chai_1.expect(uuidFieldSubsegment.isClosed()).to.eq(false);
-        chai_1.expect(nameFieldSubsegment.isClosed()).to.eq(false);
-        endUuidFieldSubsegment();
-        chai_1.expect(uuidFieldSubsegment.isClosed()).to.eq(true);
-        chai_1.expect(productSubsegment.isClosed()).to.eq(false, "Product subsegment should still be open");
-        endNameFieldSubsegment();
-        chai_1.expect(nameFieldSubsegment.isClosed()).to.eq(true);
-        chai_1.expect(productSubsegment.isClosed()).to.eq(true, "Product subsegment should have been closed");
-    }
-    testClosesNestedSegmentParent() {
-        this.startRequest();
-        this.requestField("Query.profile");
-        const endUuidFieldSubsegment = this.requestField("Profile.profile/uuid");
-        const endNameFieldSubsegment = this.requestField("Profile.profile/name");
-        const endStreetFieldSubsegment = this.requestField("Profile.profile/address/street");
-        const profileSubsegment = this.rootSegment.subsegments[0];
-        const uuidFieldSubsegment = profileSubsegment.subsegments[0];
-        const nameFieldSubsegment = profileSubsegment.subsegments[1];
-        const streetFieldSubsegment = profileSubsegment.subsegments[2].subsegments[0];
-        chai_1.expect(uuidFieldSubsegment.isClosed()).to.eq(false);
-        chai_1.expect(nameFieldSubsegment.isClosed()).to.eq(false);
-        chai_1.expect(streetFieldSubsegment.isClosed()).to.eq(false);
-        endUuidFieldSubsegment();
-        chai_1.expect(uuidFieldSubsegment.isClosed()).to.eq(true);
-        chai_1.expect(profileSubsegment.isClosed()).to.eq(false, "Profile subsegment should still be open");
-        endNameFieldSubsegment();
-        chai_1.expect(nameFieldSubsegment.isClosed()).to.eq(true);
-        chai_1.expect(profileSubsegment.isClosed()).to.eq(false, "Profile subsegment should still be open");
-        endStreetFieldSubsegment();
-        chai_1.expect(streetFieldSubsegment.isClosed()).to.eq(true);
-        chai_1.expect(profileSubsegment.isClosed()).to.eq(true, "Profile subsegment should have been closed");
     }
     startRequest(extension) {
         if (extension != null) {
@@ -258,18 +214,6 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], XRayGraphQLExtensionSpec.prototype, "testClosesNestedSegmentForEachField", null);
-__decorate([
-    mocha_typescript_1.test("it closes nested list subsegment parent segment"),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], XRayGraphQLExtensionSpec.prototype, "testClosesNestedListSegmentParent", null);
-__decorate([
-    mocha_typescript_1.test("it closes nested subsegment parent segment"),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], XRayGraphQLExtensionSpec.prototype, "testClosesNestedSegmentParent", null);
 XRayGraphQLExtensionSpec = __decorate([
     mocha_typescript_1.suite(mocha_typescript_1.timeout(300), mocha_typescript_1.slow(50))
 ], XRayGraphQLExtensionSpec);

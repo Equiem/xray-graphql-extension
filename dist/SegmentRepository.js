@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const aws_xray_sdk_core_1 = require("aws-xray-sdk-core");
 /**
  * A repository of Segments.
  */
@@ -22,15 +21,11 @@ class SegmentRepository {
         if (path == null) {
             return;
         }
-        let parent = this.find(path.prev);
-        if (parent == null) {
-            const grandparent = this.findParent(path.prev);
-            parent = grandparent != null
-                ? grandparent.addNewSubsegment(this.pathToString(path.prev))
-                : new aws_xray_sdk_core_1.Segment(this.pathToString(path.prev));
-            this.add(path.prev, parent);
+        const parent = this.find(path.prev);
+        if (parent != null) {
+            return parent;
         }
-        return parent;
+        return this.findParent(path.prev);
     }
     pathToString(path) {
         let part = path;

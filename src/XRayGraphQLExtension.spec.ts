@@ -5,6 +5,7 @@ import * as chaiAsPromised from "chai-as-promised";
 import { GraphQLResolveInfo, ResponsePath } from "graphql";
 import { EndHandler } from "graphql-extensions";
 import { slow, suite, test, timeout } from "mocha-typescript";
+import * as sinon from "sinon";
 import * as td from "testdouble";
 import { GraphQLExtensionRequestStartArgs } from "./GraphQLRequestStartArgs";
 import { XRayGraphQLExtension } from "./XRayGraphQLExtension";
@@ -22,6 +23,15 @@ export class XRayGraphQLExtensionSpec {
   private rootSegment: Segment;
   private extension: XRayGraphQLExtension;
   private endRequest: EndHandler;
+  private clock: sinon.SinonFakeTimers;
+
+  public beforeEach(): void {
+    this.clock = sinon.useFakeTimers();
+  }
+
+  public afterEach(): void {
+    this.clock.uninstall();
+  }
 
   @test("it uses provided root segment name")
   public testUseProvidedRootSegmentName(): void {
@@ -112,9 +122,6 @@ export class XRayGraphQLExtensionSpec {
     expect(this.rootSegment.subsegments[1].isClosed()).to.eq(true);
     expect(this.rootSegment.subsegments[0].fault).to.eq(undefined);
     expect(this.rootSegment.subsegments[1].fault).to.eq(true);
-    expect(this.rootSegment.subsegments[1].annotations).to.deep.include({
-      Error0: "Error: Something went wrong",
-    });
   }
 
   @test("it opens nested subsegments")
@@ -132,19 +139,11 @@ export class XRayGraphQLExtensionSpec {
     });
 
     expect(this.rootSegment.subsegments[0].subsegments[0]).to.deep.include({
-      name: "products/0",
-    });
-
-    expect(this.rootSegment.subsegments[0].subsegments[0].subsegments[0]).to.deep.include({
       annotations: { GraphQLField: "Product.uuid" },
       name: "products/0/uuid",
     });
 
     expect(this.rootSegment.subsegments[0].subsegments[1]).to.deep.include({
-      name: "products/1",
-    });
-
-    expect(this.rootSegment.subsegments[0].subsegments[1].subsegments[0]).to.deep.include({
       annotations: { GraphQLField: "Product.uuid" },
       name: "products/1/uuid",
     });
@@ -157,72 +156,17 @@ export class XRayGraphQLExtensionSpec {
     const endNestedSubsegment0 = this.requestField("Product.products/0/uuid");
     const endNestedSubsegment1 = this.requestField("Product.products/1/uuid");
 
-    const subSegment0 = this.rootSegment.subsegments[0].subsegments[0];
-    const nestedSubSegment0 = subSegment0.subsegments[0];
+    const nestedSubSegment0 = this.rootSegment.subsegments[0].subsegments[0];
     expect(nestedSubSegment0.isClosed()).to.eq(false);
 
     endNestedSubsegment0();
     expect(nestedSubSegment0.isClosed()).to.eq(true);
 
-    const subSegment1 = this.rootSegment.subsegments[0].subsegments[1];
-    const nestedSubSegment1 = subSegment1.subsegments[0];
+    const nestedSubSegment1 = this.rootSegment.subsegments[0].subsegments[1];
     expect(nestedSubSegment1.isClosed()).to.eq(false);
 
     endNestedSubsegment1();
     expect(nestedSubSegment1.isClosed()).to.eq(true);
-  }
-
-  @test("it closes nested list subsegment parent segment")
-  public testClosesNestedListSegmentParent(): void {
-    this.startRequest();
-    this.requestField("Query.products");
-    const endUuidFieldSubsegment = this.requestField("Product.products/0/uuid");
-    const endNameFieldSubsegment = this.requestField("Product.products/0/name");
-
-    const productSubsegment = this.rootSegment.subsegments[0].subsegments[0];
-    const uuidFieldSubsegment = productSubsegment.subsegments[0];
-    const nameFieldSubsegment = productSubsegment.subsegments[1];
-
-    expect(uuidFieldSubsegment.isClosed()).to.eq(false);
-    expect(nameFieldSubsegment.isClosed()).to.eq(false);
-
-    endUuidFieldSubsegment();
-    expect(uuidFieldSubsegment.isClosed()).to.eq(true);
-    expect(productSubsegment.isClosed()).to.eq(false, "Product subsegment should still be open");
-
-    endNameFieldSubsegment();
-    expect(nameFieldSubsegment.isClosed()).to.eq(true);
-    expect(productSubsegment.isClosed()).to.eq(true, "Product subsegment should have been closed");
-  }
-
-  @test("it closes nested subsegment parent segment")
-  public testClosesNestedSegmentParent(): void {
-    this.startRequest();
-    this.requestField("Query.profile");
-    const endUuidFieldSubsegment = this.requestField("Profile.profile/uuid");
-    const endNameFieldSubsegment = this.requestField("Profile.profile/name");
-    const endStreetFieldSubsegment = this.requestField("Profile.profile/address/street");
-
-    const profileSubsegment = this.rootSegment.subsegments[0];
-    const uuidFieldSubsegment = profileSubsegment.subsegments[0];
-    const nameFieldSubsegment = profileSubsegment.subsegments[1];
-    const streetFieldSubsegment = profileSubsegment.subsegments[2].subsegments[0];
-
-    expect(uuidFieldSubsegment.isClosed()).to.eq(false);
-    expect(nameFieldSubsegment.isClosed()).to.eq(false);
-    expect(streetFieldSubsegment.isClosed()).to.eq(false);
-
-    endUuidFieldSubsegment();
-    expect(uuidFieldSubsegment.isClosed()).to.eq(true);
-    expect(profileSubsegment.isClosed()).to.eq(false, "Profile subsegment should still be open");
-
-    endNameFieldSubsegment();
-    expect(nameFieldSubsegment.isClosed()).to.eq(true);
-    expect(profileSubsegment.isClosed()).to.eq(false, "Profile subsegment should still be open");
-
-    endStreetFieldSubsegment();
-    expect(streetFieldSubsegment.isClosed()).to.eq(true);
-    expect(profileSubsegment.isClosed()).to.eq(true, "Profile subsegment should have been closed");
   }
 
   private startRequest(extension?: XRayGraphQLExtension): void {

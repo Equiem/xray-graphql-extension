@@ -5,6 +5,9 @@ export declare class XRayGraphQLExtensionSpec {
     private rootSegment;
     private extension;
     private endRequest;
+    private clock;
+    beforeEach(): void;
+    afterEach(): void;
     testUseProvidedRootSegmentName(): void;
     testUseProvidedRootSegment(): void;
     testClosePendingRootSegment(): void;
@@ -14,8 +17,6 @@ export declare class XRayGraphQLExtensionSpec {
     testClosesSegmentsWithErrors(): void;
     testOpenNestedSegmentForEachField(): void;
     testClosesNestedSegmentForEachField(): void;
-    testClosesNestedListSegmentParent(): void;
-    testClosesNestedSegmentParent(): void;
     private startRequest;
     private requestField;
     private buildPath;

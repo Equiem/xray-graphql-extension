@@ -17,7 +17,6 @@ export declare class XRayGraphQLExtension<TContext = any> implements GraphQLExte
     willResolveField(_source: any, _args: {
         [argName: string]: any;
     }, _context: TContext, info: GraphQLResolveInfo): EndHandler;
-    closeParentsWithNoOpenSubsegments(segment: SegmentInterface): void;
     readonly segments: Segment[];
     readonly rootSegments: Segment[];
 }
