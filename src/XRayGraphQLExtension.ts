@@ -22,23 +22,24 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
     });
 
     const root = this.root(o);
-    const segment = typeof root === "string"
+    const ownsRootSegment = typeof root === "string";
+    const rootSegment = typeof root === "string"
       ? new Segment(root, trace.Root, trace.Parent)
       : root;
 
-    segment.addMetadata("query", o.queryString);
+    rootSegment.addMetadata("query", o.queryString);
 
-    this._segments.add(null, segment);
+    this._segments.add(null, rootSegment);
 
     return (...errors: Error[]): void => {
       if (errors.length > 0) {
         errors.forEach((error, i) => {
-          segment.addAnnotation(`Error${i}`, `${error}`);
+          rootSegment.addAnnotation(`Error${i}`, `${error}`);
         });
       }
-      this._segments.forEach((s: Segment): void => {
-        s.close(errors.length > 0 ? errors[0] : undefined);
-      });
+      if (ownsRootSegment) {
+        rootSegment.close();
+      }
     };
   }
 

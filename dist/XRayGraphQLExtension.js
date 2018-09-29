@@ -17,20 +17,21 @@ class XRayGraphQLExtension {
             headers: { "X-Amzn-Trace-Id": o.request.headers.get("X-Amzn-Trace-Id") },
         });
         const root = this.root(o);
-        const segment = typeof root === "string"
+        const ownsRootSegment = typeof root === "string";
+        const rootSegment = typeof root === "string"
             ? new aws_xray_sdk_core_1.Segment(root, trace.Root, trace.Parent)
             : root;
-        segment.addMetadata("query", o.queryString);
-        this._segments.add(null, segment);
+        rootSegment.addMetadata("query", o.queryString);
+        this._segments.add(null, rootSegment);
         return (...errors) => {
             if (errors.length > 0) {
                 errors.forEach((error, i) => {
-                    segment.addAnnotation(`Error${i}`, `${error}`);
+                    rootSegment.addAnnotation(`Error${i}`, `${error}`);
                 });
             }
-            this._segments.forEach((s) => {
-                s.close(errors.length > 0 ? errors[0] : undefined);
-            });
+            if (ownsRootSegment) {
+                rootSegment.close();
+            }
         };
     }
     willResolveField(_source, _args, _context, info) {

@@ -10,7 +10,8 @@ export declare class XRayGraphQLExtensionSpec {
     afterEach(): void;
     testUseProvidedRootSegmentName(): void;
     testUseProvidedRootSegment(): void;
-    testClosePendingRootSegment(): void;
+    testCloseOwnRootSegment(): void;
+    testDontCloseExternalRootSegment(): void;
     testOpenSegmentForField(): void;
     testOpenSegmentForEachField(): void;
     testClosesAllSegments(): void;

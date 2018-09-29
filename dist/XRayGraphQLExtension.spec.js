@@ -41,11 +41,17 @@ let XRayGraphQLExtensionSpec = class XRayGraphQLExtensionSpec {
         chai_1.expect(this.extension.rootSegments[0].name).to.eq("SegmentAsObject");
         chai_1.expect(this.extension.rootSegments[0].isClosed()).to.be.eq(false);
     }
-    testClosePendingRootSegment() {
-        this.startRequest();
+    testCloseOwnRootSegment() {
+        this.startRequest(new XRayGraphQLExtension_1.XRayGraphQLExtension((_) => "SegmentNameAsString"));
         chai_1.expect(this.rootSegment.isClosed()).to.eq(false);
         this.endRequest();
         chai_1.expect(this.rootSegment.isClosed()).to.eq(true);
+    }
+    testDontCloseExternalRootSegment() {
+        this.startRequest();
+        chai_1.expect(this.rootSegment.isClosed()).to.eq(false);
+        this.endRequest();
+        chai_1.expect(this.rootSegment.isClosed()).to.eq(false);
     }
     testOpenSegmentForField() {
         this.startRequest();
@@ -126,15 +132,11 @@ let XRayGraphQLExtensionSpec = class XRayGraphQLExtensionSpec {
         chai_1.expect(nestedSubSegment1.isClosed()).to.eq(true);
     }
     startRequest(extension) {
-        if (extension != null) {
-            this.extension = extension;
-            this.rootSegment = extension.rootSegments[0];
-        }
-        else {
-            this.rootSegment = new aws_xray_sdk_core_1.Segment("RootSegment");
-            this.extension = new XRayGraphQLExtension_1.XRayGraphQLExtension((_) => this.rootSegment);
-        }
+        this.extension = extension != null
+            ? extension
+            : new XRayGraphQLExtension_1.XRayGraphQLExtension((_) => new aws_xray_sdk_core_1.Segment("RootSegment"));
         this.endRequest = this.extension.requestDidStart(this.defaultOptions());
+        this.rootSegment = this.extension.rootSegments[0];
     }
     requestField(pathStr) {
         const [parentType, pathPart] = pathStr.split(".");
@@ -173,11 +175,17 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], XRayGraphQLExtensionSpec.prototype, "testUseProvidedRootSegment", null);
 __decorate([
-    mocha_typescript_1.test("it closes pending root segment on request end"),
+    mocha_typescript_1.test("it closes own root segment on request end"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
-], XRayGraphQLExtensionSpec.prototype, "testClosePendingRootSegment", null);
+], XRayGraphQLExtensionSpec.prototype, "testCloseOwnRootSegment", null);
+__decorate([
+    mocha_typescript_1.test("it doesn't close external root segment on request end"),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], XRayGraphQLExtensionSpec.prototype, "testDontCloseExternalRootSegment", null);
 __decorate([
     mocha_typescript_1.test("it opens a subSegment for a field"),
     __metadata("design:type", Function),

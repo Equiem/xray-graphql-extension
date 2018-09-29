@@ -50,13 +50,22 @@ export class XRayGraphQLExtensionSpec {
     expect(this.extension.rootSegments[0].isClosed()).to.be.eq(false);
   }
 
-  @test("it closes pending root segment on request end")
-  public testClosePendingRootSegment(): void {
-    this.startRequest();
+  @test("it closes own root segment on request end")
+  public testCloseOwnRootSegment(): void {
+    this.startRequest(new XRayGraphQLExtension((_): string => "SegmentNameAsString"));
     expect(this.rootSegment.isClosed()).to.eq(false);
 
     this.endRequest();
     expect(this.rootSegment.isClosed()).to.eq(true);
+  }
+
+  @test("it doesn't close external root segment on request end")
+  public testDontCloseExternalRootSegment(): void {
+    this.startRequest();
+    expect(this.rootSegment.isClosed()).to.eq(false);
+
+    this.endRequest();
+    expect(this.rootSegment.isClosed()).to.eq(false);
   }
 
   @test("it opens a subSegment for a field")
@@ -170,16 +179,12 @@ export class XRayGraphQLExtensionSpec {
   }
 
   private startRequest(extension?: XRayGraphQLExtension): void {
-    if (extension != null) {
-      this.extension = extension;
-      this.rootSegment = extension.rootSegments[0];
-    }
-    else {
-      this.rootSegment = new Segment("RootSegment");
-      this.extension = new XRayGraphQLExtension((_): Segment => this.rootSegment);
-    }
+    this.extension = extension != null
+      ? extension
+      : new XRayGraphQLExtension((_): Segment => new Segment("RootSegment"));
 
     this.endRequest = this.extension.requestDidStart(this.defaultOptions());
+    this.rootSegment = this.extension.rootSegments[0];
   }
 
   private requestField(pathStr: string): EndHandler {
