@@ -48,7 +48,7 @@ export class XRayGraphQLExtension<TContext = any> implements GraphQLExtension<TC
     _args: { [argName: string]: any },
     _context: TContext,
     info: GraphQLResolveInfo,
-  ): EndHandler {
+  ): (error: Error | null, result?: any) => void {
     const parent = this._segments.findParent(info.path);
     const segment = parent.addNewSubsegment(this._segments.pathToString(info.path));
 
