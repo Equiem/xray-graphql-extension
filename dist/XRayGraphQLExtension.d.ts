@@ -16,7 +16,7 @@ export declare class XRayGraphQLExtension<TContext = any> implements GraphQLExte
     requestDidStart(o: GraphQLExtensionRequestStartArgs<TContext>): EndHandler;
     willResolveField(_source: any, _args: {
         [argName: string]: any;
-    }, _context: TContext, info: GraphQLResolveInfo): EndHandler;
+    }, _context: TContext, info: GraphQLResolveInfo): (error: Error | null, result?: any) => void;
     readonly segments: Segment[];
     readonly rootSegments: Segment[];
 }
