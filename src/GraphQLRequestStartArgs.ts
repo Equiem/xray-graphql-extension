@@ -2,7 +2,7 @@ import { DocumentNode } from "graphql";
 import { Request } from "graphql-extensions";
 
 export interface GraphQLExtensionRequestStartArgs<TContext> {
-  request: Request;
+  request: Pick<Request, "url" | "method" | "headers">;
   queryString?: string;
   parsedQuery?: DocumentNode;
   operationName?: string;
